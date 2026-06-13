@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CuiDomo+ · Evaluador de riesgo en casa</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f7f8;
+      --surface: #ffffff;
+      --surface-2: #eef6f5;
+      --ink: #1c2526;
+      --muted: #5f6f72;
+      --line: #d9e3e4;
+      --teal: #147d78;
+      --teal-dark: #0c615d;
+      --gold: #b97012;
+      --red: #b93838;
+      --green: #237a4b;
+      --blue: #2f6792;
+      --shadow: 0 16px 36px rgba(33, 55, 58, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        linear-gradient(180deg, #edf5f4 0%, #f7f6f0 48%, #f4f7f8 100%);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1120px, calc(100% - 28px));
+      margin: 28px auto;
+      background: var(--surface);
+      border: 1px solid rgba(17, 91, 87, .14);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      color: #fff;
+      background: linear-gradient(135deg, #126d68 0%, #2f6792 100%);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.22);
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 32px);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 5px 0 0;
+      color: rgba(255,255,255,.84);
+      font-size: 14px;
+    }
+
+    .status-pill {
+      min-width: 132px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.24);
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr);
+      min-height: 640px;
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    .panel + .panel {
+      border-left: 1px solid var(--line);
+      background: #fbfcfc;
+    }
+
+    .section {
+      padding: 18px 0 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section:first-child {
+      padding-top: 0;
+    }
+
+    .section:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 14px;
+      font-size: 17px;
+    }
+
+    .step {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: var(--teal-dark);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    label,
+    .choice-label {
+      display: block;
+      margin-bottom: 7px;
+      color: #263335;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    select,
+    input[type="number"] {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: #fff;
+      border: 1px solid #cfdcde;
+      border-radius: 8px;
+      outline: 0;
+    }
+
+    select:focus,
+    input[type="number"]:focus,
+    .option:focus-within {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(20, 125, 120, .16);
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .option {
+      position: relative;
+      min-height: 44px;
+      border: 1px solid #cfdcde;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .option input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .option span {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #344345;
+    }
+
+    .option input:checked + span {
+      color: var(--teal-dark);
+      background: #e8f5f3;
+      outline: 2px solid rgba(20, 125, 120, .24);
+      outline-offset: -2px;
+      border-radius: 7px;
+    }
+
+    .checks {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: 9px;
+      align-items: start;
+      min-height: 54px;
+      padding: 11px;
+      border: 1px solid #d8e3e5;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .check input {
+      width: 18px;
+      height: 18px;
+      margin: 1px 0 0;
+      accent-color: var(--teal);
+    }
+
+    .check span {
+      font-size: 13px;
+      line-height: 1.25;
+      color: #344345;
+      font-weight: 650;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .btn-primary {
+      color: #fff;
+      background: var(--teal);
+    }
+
+    .btn-primary:hover {
+      background: var(--teal-dark);
+    }
+
+    .btn-ghost {
+      color: #223033;
+      background: #eef3f3;
+      border: 1px solid #d7e2e3;
+    }
+
+    .btn-ghost:hover {
+      background: #e3ecec;
+    }
+
+    .result {
+      position: sticky;
+      top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .score-box {
+      padding: 16px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .score-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .score-label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .risk-title {
+      margin: 3px 0 0;
+      font-size: 24px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .score {
+      display: grid;
+      place-items: center;
+      width: 82px;
+      height: 82px;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at center, #fff 58%, transparent 60%),
+        conic-gradient(var(--teal) 0deg, var(--teal) var(--angle), #e6eeee var(--angle), #e6eeee 360deg);
+      color: var(--ink);
+      font-size: 24px;
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+
+    .meter {
+      height: 10px;
+      border-radius: 999px;
+      background: #dfe8e9;
+      overflow: hidden;
+    }
+
+    .meter i {
+      display: block;
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--teal);
+      transition: width .35s ease;
+    }
+
+    .result-note {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      min-height: 74px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .metric b {
+      display: block;
+      margin-top: 6px;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .recommendations,
+    .alert-box {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .recommendations h2,
+    .alert-box h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .task-list {
+      display: grid;
+      gap: 8px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .task {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      padding: 9px 0;
+      border-top: 1px solid #edf2f2;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .task:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      margin-top: 4px;
+      border-radius: 999px;
+      background: var(--green);
+    }
+
+    .dot.high {
+      background: var(--red);
+    }
+
+    .dot.medium {
+      background: var(--gold);
+    }
+
+    .dot.info {
+      background: var(--blue);
+    }
+
+    .alert-box {
+      background: #fff7f3;
+      border-color: #efd2c5;
+    }
+
+    .alert-box p {
+      margin: 0;
+      color: #6d3c30;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .empty {
+      padding: 18px;
+      color: var(--muted);
+      background: #fff;
+      border: 1px dashed #cddadc;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .error {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 12px;
+      color: #7a2f2f;
+      background: #fdecec;
+      border: 1px solid #f2caca;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .low {
+      --risk-color: var(--green);
+    }
+
+    .moderate {
+      --risk-color: var(--gold);
+    }
+
+    .high {
+      --risk-color: var(--red);
+    }
+
+    .critical {
+      --risk-color: #8c2424;
+    }
+
+    .low .score,
+    .low .meter i {
+      background:
+        radial-gradient(circle at center, #fff 58%, transparent 60%),
+        conic-gradient(var(--green) 0deg, var(--green) var(--angle), #e6eeee var(--angle), #e6eeee 360deg);
+    }
+
+    .low .meter i {
+      background: var(--green);
+    }
+
+    .moderate .score {
+      background:
+        radial-gradient(circle at center, #fff 58%, transparent 60%),
+        conic-gradient(var(--gold) 0deg, var(--gold) var(--angle), #e6eeee var(--angle), #e6eeee 360deg);
+    }
+
+    .moderate .meter i {
+      background: var(--gold);
+    }
+
+    .high .score {
+      background:
+        radial-gradient(circle at center, #fff 58%, transparent 60%),
+        conic-gradient(var(--red) 0deg, var(--red) var(--angle), #e6eeee var(--angle), #e6eeee 360deg);
+    }
+
+    .high .meter i {
+      background: var(--red);
+    }
+
+    .critical .score {
+      background:
+        radial-gradient(circle at center, #fff 58%, transparent 60%),
+        conic-gradient(#8c2424 0deg, #8c2424 var(--angle), #e6eeee var(--angle), #e6eeee 360deg);
+    }
+
+    .critical .meter i {
+      background: #8c2424;
+    }
+
+    @media (max-width: 860px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .panel + .panel {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .result {
+        position: static;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app {
+        width: 100%;
+        min-height: 100vh;
+        margin: 0;
+        border: 0;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .status-pill {
+        min-width: 0;
+      }
+
+      .grid,
+      .checks,
+      .choices,
+      .mini-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        padding: 16px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .app {
+        width: 100%;
+        margin: 0;
+        border: 0;
+        box-shadow: none;
+      }
+
+      .topbar {
+        color: #111;
+        background: #fff;
+        border-bottom: 2px solid #111;
+      }
+
+      .panel:first-child,
+      .actions,
+      .status-pill {
+        display: none;
+      }
+
+      .layout {
+        display: block;
+      }
+
+      .panel + .panel {
+        border: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">C+</div>
+        <div>
+          <h1>CuiDomo+ · Evaluador de riesgo en casa</h1>
+          <p class="subtitle">Seguridad doméstica en deterioro cognitivo</p>
+        </div>
+      </div>
+      <div class="status-pill" id="status">Sin evaluar</div>
+    </header>
+
+    <div class="layout">
+      <form class="panel" id="riskForm">
+        <section class="section">
+          <h2 class="section-title"><span class="step">1</span> Perfil de la persona</h2>
+          <div class="grid">
+            <div class="field">
+              <label for="phase">Fase del deterioro</label>
+              <select id="phase" required>
+                <option value="">Selecciona...</option>
+                <option value="initial">Inicial</option>
+                <option value="moderate">Moderada</option>
+                <option value="advanced">Avanzada</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="mobility">Movilidad habitual</label>
+              <select id="mobility" required>
+                <option value="">Selecciona...</option>
+                <option value="stable">Estable</option>
+                <option value="aid">Con bastón/andador</option>
+                <option value="unstable">Inestable o necesita ayuda</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <span class="choice-label">¿Se desorienta en casa?</span>
+              <div class="choices">
+                <label class="option"><input type="radio" name="orientation" value="yes" required><span>Sí</span></label>
+                <label class="option"><input type="radio" name="orientation" value="no"><span>No</span></label>
+              </div>
+            </div>
+
+            <div class="field">
+              <span class="choice-label">¿Ha tenido caídas recientes?</span>
+              <div class="choices">
+                <label class="option"><input type="radio" name="falls" value="yes" required><span>Sí</span></label>
+                <label class="option"><input type="radio" name="falls" value="no"><span>No</span></label>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="supervision">Supervisión diaria</label>
+              <select id="supervision" required>
+                <option value="">Selecciona...</option>
+                <option value="continuous">Continua</option>
+                <option value="daily">Varias veces al día</option>
+                <option value="limited">Ocasional</option>
+                <option value="alone">Vive solo/a</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="mainZone">Zona que más preocupa</label>
+              <select id="mainZone" required>
+                <option value="">Selecciona...</option>
+                <option value="bathroom">Baño</option>
+                <option value="kitchen">Cocina</option>
+                <option value="bedroom">Dormitorio/Pasillos</option>
+                <option value="access">Accesos</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-title"><span class="step">2</span> Condiciones del hogar</h2>
+          <div class="checks">
+            <label class="check"><input type="checkbox" value="noBathroomGrip"><span>Baño sin asideros o alfombra antideslizante</span></label>
+            <label class="check"><input type="checkbox" value="kitchenRisk"><span>Fogones, gas o cuchillos accesibles sin control</span></label>
+            <label class="check"><input type="checkbox" value="badLighting"><span>Iluminación nocturna insuficiente</span></label>
+            <label class="check"><input type="checkbox" value="clutter"><span>Obstáculos, cables o alfombras sueltas en paso</span></label>
+            <label class="check"><input type="checkbox" value="exitRisk"><span>Puerta de salida fácil de abrir sin supervisión</span></label>
+            <label class="check"><input type="checkbox" value="medsRisk"><span>Medicación o productos de limpieza al alcance</span></label>
+            <label class="check"><input type="checkbox" value="nightWandering"><span>Se levanta o deambula por la noche</span></label>
+            <label class="check"><input type="checkbox" value="noEmergencyPlan"><span>No hay plan claro ante caídas o fuga</span></label>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-title"><span class="step">3</span> Generar evaluación</h2>
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">Generar evaluación</button>
+            <button class="btn btn-ghost" type="button" id="resetBtn">Limpiar</button>
+            <button class="btn btn-ghost" type="button" id="printBtn" disabled>Imprimir</button>
+          </div>
+          <div class="error" id="errorBox">Completa los campos obligatorios para calcular el resultado.</div>
+        </section>
+      </form>
+
+      <aside class="panel" aria-live="polite">
+        <div class="result" id="resultPanel">
+          <div class="empty" id="emptyState">
+            El resultado aparecerá aquí con nivel de riesgo, objetivo principal y medidas recomendadas.
+          </div>
+
+          <div class="score-box" id="scoreBox" hidden>
+            <div class="score-head">
+              <div>
+                <span class="score-label">Resultado</span>
+                <h2 class="risk-title" id="riskTitle">Riesgo bajo</h2>
+              </div>
+              <div class="score" id="scoreCircle">0</div>
+            </div>
+            <div class="meter" aria-hidden="true"><i id="meterBar"></i></div>
+            <p class="result-note" id="resultNote"></p>
+          </div>
+
+          <div class="mini-grid" id="metrics" hidden>
+            <div class="metric">
+              <span>Supervisión</span>
+              <b id="supervisionText">-</b>
+            </div>
+            <div class="metric">
+              <span>Prioridad</span>
+              <b id="priorityText">-</b>
+            </div>
+            <div class="metric">
+              <span>Zona crítica</span>
+              <b id="zoneText">-</b>
+            </div>
+            <div class="metric">
+              <span>Objetivo</span>
+              <b id="goalText">-</b>
+            </div>
+          </div>
+
+          <div class="recommendations" id="recommendations" hidden>
+            <h2>Checklist priorizado</h2>
+            <ul class="task-list" id="taskList"></ul>
+          </div>
+
+          <div class="alert-box" id="alertBox" hidden>
+            <h2>Consultar con profesional sanitario si hay</h2>
+            <p>Caídas repetidas, agresividad nueva, somnolencia marcada, fiebre, dolor, confusión repentina o empeoramiento brusco.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const weights = {
+      phase: { initial: 16, moderate: 36, advanced: 58 },
+      mobility: { stable: 0, aid: 9, unstable: 16 },
+      orientation: { yes: 15, no: 0 },
+      falls: { yes: 18, no: 0 },
+      supervision: { continuous: -8, daily: 2, limited: 11, alone: 18 },
+      home: {
+        noBathroomGrip: 8,
+        kitchenRisk: 10,
+        badLighting: 7,
+        clutter: 8,
+        exitRisk: 12,
+        medsRisk: 9,
+        nightWandering: 13,
+        noEmergencyPlan: 8
+      }
+    };
+
+    const zones = {
+      bathroom: {
+        label: "Baño",
+        tasks: [
+          ["high", "Instalar asideros visibles junto a WC y ducha."],
+          ["medium", "Usar alfombra antideslizante fija y retirar alfombrillas sueltas."],
+          ["info", "Dejar productos de higiene en lugares predecibles y bien iluminados."]
+        ]
+      },
+      kitchen: {
+        label: "Cocina",
+        tasks: [
+          ["high", "Bloquear fogones, gas y pequeños electrodomésticos cuando no haya supervisión."],
+          ["high", "Guardar cuchillos, cerillas y productos químicos fuera del alcance."],
+          ["medium", "Preparar opciones de comida segura si la persona intenta cocinar sola."]
+        ]
+      },
+      bedroom: {
+        label: "Dormitorio/Pasillos",
+        tasks: [
+          ["medium", "Añadir luces nocturnas entre cama, baño y pasillo."],
+          ["medium", "Retirar cables, muebles bajos y esquinas peligrosas de las zonas de paso."],
+          ["info", "Colocar calzado cerrado y cómodo en un punto fijo."]
+        ]
+      },
+      access: {
+        label: "Accesos",
+        tasks: [
+          ["high", "Instalar aviso de apertura o sensor discreto en la puerta principal."],
+          ["medium", "Mantener llaves y documentación en un lugar seguro y constante."],
+          ["medium", "Valorar localizador si hay desorientación o intentos de salida."]
+        ]
+      }
+    };
+
+    const homeTasks = {
+      noBathroomGrip: ["high", "Corregir el baño: asideros, superficie antideslizante y silla de ducha si procede."],
+      kitchenRisk: ["high", "Reducir el acceso a cocina, gas, fogones, cuchillos y productos calientes."],
+      badLighting: ["medium", "Mejorar iluminación nocturna con sensores o pilotos de bajo consumo."],
+      clutter: ["medium", "Despejar recorridos y fijar alfombras, cables y muebles inestables."],
+      exitRisk: ["high", "Añadir control de salida compatible con una evacuación segura."],
+      medsRisk: ["high", "Guardar medicación, lejía y químicos en armario cerrado o elevado."],
+      nightWandering: ["medium", "Crear ruta nocturna segura y valorar sensor de cama o movimiento."],
+      noEmergencyPlan: ["medium", "Definir contacto, protocolo y teléfono visible ante caída, fuga o agitación."]
+    };
+
+    const tiers = [
+      {
+        max: 34,
+        key: "low",
+        title: "Riesgo bajo",
+        supervision: "Supervisión ocasional",
+        priority: "Mantener autonomía",
+        goal: "Prevenir accidentes sin limitar rutinas.",
+        note: "El entorno parece razonablemente seguro, pero conviene reforzar hábitos, iluminación y orden."
+      },
+      {
+        max: 64,
+        key: "moderate",
+        title: "Riesgo moderado",
+        supervision: "Revisiones frecuentes",
+        priority: "Reducir incidentes",
+        goal: "Disminuir caídas, olvidos peligrosos y desorientación.",
+        note: "Hay factores que pueden aumentar accidentes. Prioriza las medidas de mayor impacto en esta semana."
+      },
+      {
+        max: 84,
+        key: "high",
+        title: "Riesgo alto",
+        supervision: "Supervisión diaria estrecha",
+        priority: "Intervenir pronto",
+        goal: "Evitar lesiones, fugas y exposiciones a calor o químicos.",
+        note: "El hogar necesita ajustes claros y seguimiento frecuente para sostener seguridad y calma."
+      },
+      {
+        max: 100,
+        key: "critical",
+        title: "Riesgo crítico",
+        supervision: "Supervisión continua",
+        priority: "Actuación inmediata",
+        goal: "Proteger a la persona y revisar apoyos disponibles.",
+        note: "La combinación de factores sugiere alto riesgo de daño. Conviene activar apoyo familiar o profesional."
+      }
+    ];
+
+    const form = document.getElementById("riskForm");
+    const status = document.getElementById("status");
+    const errorBox = document.getElementById("errorBox");
+    const resetBtn = document.getElementById("resetBtn");
+    const printBtn = document.getElementById("printBtn");
+    const resultPanel = document.getElementById("resultPanel");
+    const emptyState = document.getElementById("emptyState");
+    const scoreBox = document.getElementById("scoreBox");
+    const metrics = document.getElementById("metrics");
+    const recommendations = document.getElementById("recommendations");
+    const alertBox = document.getElementById("alertBox");
+    const riskTitle = document.getElementById("riskTitle");
+    const scoreCircle = document.getElementById("scoreCircle");
+    const meterBar = document.getElementById("meterBar");
+    const resultNote = document.getElementById("resultNote");
+    const supervisionText = document.getElementById("supervisionText");
+    const priorityText = document.getElementById("priorityText");
+    const zoneText = document.getElementById("zoneText");
+    const goalText = document.getElementById("goalText");
+    const taskList = document.getElementById("taskList");
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!form.checkValidity()) {
+        errorBox.style.display = "block";
+        form.reportValidity();
+        return;
+      }
+
+      errorBox.style.display = "none";
+      renderResult(calculate());
+    });
+
+    resetBtn.addEventListener("click", () => {
+      form.reset();
+      status.textContent = "Sin evaluar";
+      printBtn.disabled = true;
+      resultPanel.className = "result";
+      emptyState.hidden = false;
+      scoreBox.hidden = true;
+      metrics.hidden = true;
+      recommendations.hidden = true;
+      alertBox.hidden = true;
+      errorBox.style.display = "none";
+    });
+
+    printBtn.addEventListener("click", () => window.print());
+
+    function calculate() {
+      const phase = document.getElementById("phase").value;
+      const mobility = document.getElementById("mobility").value;
+      const orientation = form.elements.orientation.value;
+      const falls = form.elements.falls.value;
+      const supervision = document.getElementById("supervision").value;
+      const mainZone = document.getElementById("mainZone").value;
+      const checked = Array.from(form.querySelectorAll(".check input:checked")).map((item) => item.value);
+
+      let score = weights.phase[phase]
+        + weights.mobility[mobility]
+        + weights.orientation[orientation]
+        + weights.falls[falls]
+        + weights.supervision[supervision];
+
+      checked.forEach((key) => {
+        score += weights.home[key] || 0;
+      });
+
+      score = Math.max(0, Math.min(100, Math.round(score)));
+      const tier = tiers.find((item) => score <= item.max);
+      const tasks = buildTasks({ phase, orientation, falls, supervision, mainZone, checked, tier });
+
+      return { score, tier, mainZone, tasks };
+    }
+
+    function buildTasks(data) {
+      const list = [];
+      const pushUnique = (task) => {
+        if (!list.some((item) => item[1] === task[1])) list.push(task);
+      };
+
+      zones[data.mainZone].tasks.forEach(pushUnique);
+      data.checked.forEach((key) => pushUnique(homeTasks[key]));
+
+      if (data.orientation === "yes") {
+        pushUnique(["high", "Usar señales simples en baño, dormitorio y salida para orientar sin sobrecargar."]);
+        pushUnique(["medium", "Valorar localizador o tarjeta de identificación si existe riesgo de salida."]);
+      }
+
+      if (data.falls === "yes") {
+        pushUnique(["high", "Revisar calzado, visión, medicación y necesidad de fisioterapia o ayudas técnicas."]);
+      }
+
+      if (data.supervision === "alone" || data.supervision === "limited") {
+        pushUnique(["high", "Acordar rondas de comprobación y contacto diario con una persona responsable."]);
+      }
+
+      if (data.phase === "advanced") {
+        pushUnique(["high", "Simplificar recorridos y retirar objetos no esenciales de las zonas de actividad."]);
+      }
+
+      if (data.tier.key === "low") {
+        pushUnique(["info", "Revisar la evaluación cada mes o tras cualquier cambio de salud o rutina."]);
+      }
+
+      return list.slice(0, 8);
+    }
+
+    function renderResult(data) {
+      const angle = `${Math.round(data.score * 3.6)}deg`;
+      resultPanel.className = `result ${data.tier.key}`;
+      resultPanel.style.setProperty("--angle", angle);
+
+      emptyState.hidden = true;
+      scoreBox.hidden = false;
+      metrics.hidden = false;
+      recommendations.hidden = false;
+      alertBox.hidden = false;
+      printBtn.disabled = false;
+
+      status.textContent = "Evaluación generada";
+      riskTitle.textContent = data.tier.title;
+      scoreCircle.textContent = data.score;
+      scoreCircle.setAttribute("aria-label", `${data.score} de 100`);
+      meterBar.style.width = `${data.score}%`;
+      resultNote.textContent = data.tier.note;
+      supervisionText.textContent = data.tier.supervision;
+      priorityText.textContent = data.tier.priority;
+      zoneText.textContent = zones[data.mainZone].label;
+      goalText.textContent = data.tier.goal;
+
+      taskList.innerHTML = "";
+      data.tasks.forEach(([level, text]) => {
+        const li = document.createElement("li");
+        li.className = "task";
+        li.innerHTML = `<span class="dot ${level}" aria-hidden="true"></span><span>${text}</span>`;
+        taskList.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
